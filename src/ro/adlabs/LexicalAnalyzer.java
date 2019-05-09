@@ -10,7 +10,7 @@ import java.util.Map;
 public class LexicalAnalyzer {
 
     List<Token> tokens;
-    Map<Character, Integer> zeroTransitions = new HashMap<Character, Integer>() {{
+    Map<Character, Integer> initialStateTransitions = new HashMap<Character, Integer>() {{
         put(' ', States.STATE_INITIAL);
         put('\n', States.STATE_INITIAL);
         put('\r', States.STATE_INITIAL);
@@ -41,7 +41,12 @@ public class LexicalAnalyzer {
 
     public LexicalAnalyzer(String source) {
         this.sourceCode = source;
-        tokens = new ArrayList<>();
+        this.tokens = new ArrayList<>();
+    }
+
+    @Override
+    public String toString() {
+        return tokens.toString();
     }
 
     public boolean analyze() {
@@ -51,25 +56,32 @@ public class LexicalAnalyzer {
 
         while (true) {
             Character currentCharacter = sourceCode.charAt(index);
+//            System.out.println(currentCharacter);
 
             switch (state) {
                 case States.STATE_INITIAL: // inceput de ID
                     // verific daca caracterul e in map-ul de tranzitii din starea de inceput 0
-                    if (zeroTransitions.containsKey(currentCharacter)) {
-                        state = zeroTransitions.get(currentCharacter);
+                    if (initialStateTransitions.containsKey(currentCharacter)) {
+                        state = initialStateTransitions.get(currentCharacter);
                     } else {
+                        if (identifierStartIndex == -1) {
+                            identifierStartIndex = index;
+                        }
+
                         if (isIdentifierStart(currentCharacter)) {
-                            if (identifierStartIndex == -1) {
-                                identifierStartIndex = index;
-                                state = States.STATE_ID_1;
-                            } else {
-                                throw new IllegalStateException("Rewriting an identified");
-                            }
+
+                            state = States.STATE_ID_1;
+
                         } else if (isStartOfNumber(currentCharacter)) { //is digit..
+
                             if (numberStartsWithZero(currentCharacter)) {
+
                                 state = States.STATE_NUMERIC_5; // if it starts with 0 then it might be octal or hex
+
                             } else {
+
                                 state = States.STATE_NUMERIC_3; // number is decimal
+
                             }
                         }
                     }
@@ -84,6 +96,7 @@ public class LexicalAnalyzer {
                 case States.STATE_ID_1:
                     if (!isContinuationOfIdentifier(currentCharacter)) {
                         state = States.STATE_ID_2_FINAL;
+                        continue;
                     }
                     index++;
                     break;
@@ -96,7 +109,9 @@ public class LexicalAnalyzer {
                     break;
 
                 case States.STATE_NUMERIC_3:
-                    identifierStartIndex = index;
+                    if (identifierStartIndex == -1) {
+                        identifierStartIndex = index;
+                    }
 
                     if (currentCharacter == '.') {
                         state = States.STATE_NUMERIC_10;
@@ -104,6 +119,7 @@ public class LexicalAnalyzer {
                         state = States.STATE_NUMERIC_9;
                     } else if (!Character.isDigit(currentCharacter)) {
                         state = States.STATE_INT_4_FINAL;
+                        continue;
                     }
                     index++;
                     break;
@@ -116,7 +132,9 @@ public class LexicalAnalyzer {
                     break;
 
                 case States.STATE_NUMERIC_5:
-                    identifierStartIndex = index;
+                    if (identifierStartIndex == -1) {
+                        identifierStartIndex = index;
+                    }
 
                     if (currentCharacter == 'x') { // is hex
                         state = States.STATE_NUMERIC_6;
@@ -131,6 +149,7 @@ public class LexicalAnalyzer {
                 case States.STATE_NUMERIC_6:
                     if (!isHexDigit(currentCharacter)) {
                         state = States.STATE_INT_4_FINAL;
+                        continue;
                     }
                     index++;
                     break;
@@ -147,6 +166,7 @@ public class LexicalAnalyzer {
                         state = States.STATE_NUMERIC_9;
                     } else {
                         state = States.STATE_INT_4_FINAL;
+                        continue;
                     }
                     index++;
                     break;
@@ -215,16 +235,92 @@ public class LexicalAnalyzer {
                     break;
 
                 case States.STATE_STRING_15:
+                    if (identifierStartIndex == -1) {
+                        identifierStartIndex = index;
+                    }
 
+                    if (currentCharacter == '\\') {
+                        state = States.STATE_STRING_16;
+                    } else if (currentCharacter != '"') {
+                        state = States.STATE_STRING_18;
+                    } else {
+                        cannotHaveAnotherValue(currentCharacter);
+                    }
+                    index++;
                     break;
 
+                case States.STATE_STRING_16:
+                    if (isEscape(currentCharacter)) {
+                        state = States.STATE_STRING_18;
+                    } else {
+                        cannotHaveAnotherValue(currentCharacter);
+                    }
+                    index++;
+                    break;
 
+                case States.STATE_STRING_18:
+                    if (currentCharacter == '"') {
+                        state = States.STATE_STRING_19_FINAL;
+                    } else {
+                        state = States.STATE_STRING_15;
+                    }
+                    break;
 
+                case States.STATE_STRING_19_FINAL:
+                    String theString = sourceCode.substring(identifierStartIndex, index);
+                    identifierStartIndex = -1;
+                    createToken(Token.TokenType.CT_STRING, theString, currentLine);
+                    state = States.STATE_INITIAL;
+                    break;
 
+                case States.STATE_CHAR_20:
+                    if (identifierStartIndex == -1) {
+                        identifierStartIndex = index;
+                    }
 
+                    if (currentCharacter == '\\') {
+                        state = States.STATE_CHAR_17;
+                    } else if (currentCharacter != '\'') {
+                        state = States.STATE_CHAR_21;
+                    } else {
+                        cannotHaveAnotherValue(currentCharacter);
+                    }
+                    index++;
+                    break;
 
+                case States.STATE_CHAR_21:
+                    if (currentCharacter == '\'') {
+                        state = States.STATE_CHAR_23_FINAL;
+                    } else {
+                        cannotHaveAnotherValue(currentCharacter);
+                    }
+                    index++;
+                    break;
 
+                case States.STATE_CHAR_17:
+                    if (isEscape(currentCharacter)) {
+                        state = States.STATE_CHAR_22;
+                    } else {
+                        cannotHaveAnotherValue(currentCharacter);
+                    }
+                    index++;
+                    break;
 
+                case States.STATE_CHAR_22:
+                    if (currentCharacter == '\'') {
+                        state = States.STATE_CHAR_23_FINAL;
+                    } else {
+                        cannotHaveAnotherValue(currentCharacter);
+                    }
+                    index++;
+                    break;
+
+                case States.STATE_CHAR_23_FINAL:
+                    String theChar = sourceCode.substring(identifierStartIndex, index);
+                    identifierStartIndex = -1;
+                    createToken(Token.TokenType.CT_CHAR, theChar, currentLine);
+                    state = States.STATE_INITIAL;
+                    break;
 
                 case States.STATE_COMMA_25:
                     Character c = ',';
@@ -449,6 +545,21 @@ public class LexicalAnalyzer {
         return true;
     }
 
+    private boolean isEscape(Character currentCharacter) {
+        return currentCharacter == 'a'
+                || currentCharacter == 'b'
+                || currentCharacter == 'f'
+                || currentCharacter == 'n'
+                || currentCharacter == 'r'
+                || currentCharacter == 't'
+                || currentCharacter == 'v'
+                || currentCharacter == '\''
+                || currentCharacter == '\"'
+                || currentCharacter == '?'
+                || currentCharacter == '\\'
+                || currentCharacter == '0';
+    }
+
     private void cannotHaveAnotherValue(Character currentCharacter) {
         throw new IllegalStateException("Cannot have another value here: " + currentCharacter);
     }
@@ -555,39 +666,3 @@ public class LexicalAnalyzer {
         public static final int STATE_COMMENT_LINE_58 = 58;
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

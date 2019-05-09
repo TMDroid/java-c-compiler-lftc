@@ -25,7 +25,7 @@ public class Compiler {
             Log.error("Code is not lexically correct");
         }
 
-        System.out.println(sourceCode);
+        System.out.println(analyzer);
 
         return true;
     }
