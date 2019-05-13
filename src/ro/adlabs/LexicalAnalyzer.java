@@ -104,7 +104,15 @@ public class LexicalAnalyzer {
                 case States.STATE_ID_2_FINAL:
                     String identifier = sourceCode.substring(identifierStartIndex, index);
                     identifierStartIndex = -1;
-                    createToken(Token.TokenType.ID, identifier, currentLine);
+
+                    String keyword = getKeywordToken(identifier);
+                    if(keyword != null) {
+                        Token.TokenType token = Token.getTokenTypeForTokenString(keyword);
+                        createToken(token, keyword, currentLine);
+                    } else {
+                        createToken(Token.TokenType.ID, identifier, currentLine);
+                    }
+
                     state = States.STATE_INITIAL;
                     break;
 
@@ -543,6 +551,10 @@ public class LexicalAnalyzer {
         }
 
         return true;
+    }
+
+    private String getKeywordToken(String id) {
+        return Token.getKeywordToken(id);
     }
 
     private boolean isEscape(Character currentCharacter) {
