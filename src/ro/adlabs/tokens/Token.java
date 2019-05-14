@@ -31,6 +31,7 @@ public class Token {
         put(TokenType.CT_REAL, "CT_REAL");
         put(TokenType.CT_CHAR, "CT_CHAR");
         put(TokenType.CT_STRING, "CT_STRING");
+        put(TokenType.DOT, "DOT");
         put(TokenType.COMMA, "COMMA");
         put(TokenType.SEMICOLON, "SEMICOLON");
         put(TokenType.LPAR, "LPAR");
@@ -71,6 +72,16 @@ public class Token {
         this.code = code;
         this.value = value;
         this.line = line;
+    }
+
+    public Token() {
+        this.code = TokenType.END;
+        this.value = null;
+        this.line = -1;
+    }
+
+    public boolean is(TokenType tokenType) {
+        return this.code == tokenType;
     }
 
     public TokenType getCode() {
@@ -119,7 +130,7 @@ public class Token {
     }
 
     public static enum TokenType {
-        ID, CT_INT, CT_REAL, CT_CHAR, CT_STRING, COMMA, SEMICOLON, LPAR, RPAR, LBRACKET, RBRACKET, LACC, RACC,
+        ID, CT_INT, CT_REAL, CT_CHAR, CT_STRING, DOT, COMMA, SEMICOLON, LPAR, RPAR, LBRACKET, RBRACKET, LACC, RACC,
         ADD, SUB, MUL, AND, OR, NOT, NOTEQ, LESS, LESSEQ, GREATER, GREATEREQ, ASSIGN, EQUAL, DIV, END,
         BREAK, CHAR, DOUBLE, ELSE, FOR, IF, INT, RETURN, STRUCT, VOID, WHILE
     }
