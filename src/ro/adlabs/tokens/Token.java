@@ -21,10 +21,6 @@ typedef struct _Token{
 
  */
 public class Token {
-    protected TokenType code;
-    protected Object value;
-    protected Integer line;
-
     private static final Map<TokenType, String> tokenStrings = new HashMap<TokenType, String>() {{
         put(TokenType.ID, "ID");
         put(TokenType.CT_INT, "CT_INT");
@@ -67,6 +63,9 @@ public class Token {
         put(TokenType.VOID, "VOID");
         put(TokenType.WHILE, "WHILE");
     }};
+    protected TokenType code;
+    protected Object value;
+    protected Integer line;
 
     public Token(TokenType code, Object value, Integer line) {
         this.code = code;
@@ -78,6 +77,42 @@ public class Token {
         this.code = TokenType.END;
         this.value = null;
         this.line = -1;
+    }
+
+    public static String getKeywordToken(String code) {
+        List<String> keywordsLowerCase = new ArrayList<String>() {{
+            add("break");
+            add("char");
+            add("double");
+            add("else");
+            add("for");
+            add("if");
+            add("int");
+            add("return");
+            add("struct");
+            add("void");
+            add("while");
+        }};
+
+        if (keywordsLowerCase.contains(code.toLowerCase())) {
+            return keywordsLowerCase.get(keywordsLowerCase.indexOf(code.toLowerCase())).toUpperCase();
+        }
+
+        return null;
+    }
+
+    public static Map<TokenType, String> getTokenStrings() {
+        return tokenStrings;
+    }
+
+    public static TokenType getTokenTypeForTokenString(String tokenString) {
+        for (Map.Entry<TokenType, String> entry : tokenStrings.entrySet()) {
+            if (entry.getValue().equals(tokenString)) {
+                return entry.getKey();
+            }
+        }
+
+        return null;
     }
 
     public boolean is(TokenType tokenType) {
@@ -98,54 +133,30 @@ public class Token {
 
     @Override
     public String toString() {
-        String payload = "";
-        if (code == TokenType.CT_CHAR || code == TokenType.CT_INT || code == TokenType.ID
-                || code == TokenType.CT_REAL || code == TokenType.CT_STRING) {
-            payload = String.format(":%s", String.valueOf(value));
+        String payload = String.format("Line %d => %s", line, getTokenString());
+        if(isSomeFormOfConstact()) {
+            payload = String.format("%s: %s", payload, String.valueOf(value));
         }
 
-        return getTokenString() + payload;
+        return payload;
+    }
+
+    private boolean isSomeFormOfConstact() {
+        return code == TokenType.CT_CHAR || code == TokenType.CT_INT || code == TokenType.ID
+                || code == TokenType.CT_REAL || code == TokenType.CT_STRING;
     }
 
     public String getTokenString() {
-        if(tokenStrings.containsKey(code)) {
+        if (tokenStrings.containsKey(code)) {
             return tokenStrings.get(code);
         }
 
         return "";
     }
 
-
-    public static String getKeywordToken(String code) {
-        List<String> keywordsLowerCase = new ArrayList<String>() {{
-            add("break"); add("char"); add("double"); add("else"); add("for"); add("if"); add("int");
-            add("return"); add("struct"); add("void"); add("while");
-        }};
-
-        if(keywordsLowerCase.contains(code.toLowerCase())) {
-            return keywordsLowerCase.get(keywordsLowerCase.indexOf(code.toLowerCase())).toUpperCase();
-        }
-
-        return null;
-    }
-
     public static enum TokenType {
         ID, CT_INT, CT_REAL, CT_CHAR, CT_STRING, DOT, COMMA, SEMICOLON, LPAR, RPAR, LBRACKET, RBRACKET, LACC, RACC,
         ADD, SUB, MUL, AND, OR, NOT, NOTEQ, LESS, LESSEQ, GREATER, GREATEREQ, ASSIGN, EQUAL, DIV, END,
         BREAK, CHAR, DOUBLE, ELSE, FOR, IF, INT, RETURN, STRUCT, VOID, WHILE
-    }
-
-    public static Map<TokenType, String> getTokenStrings() {
-        return tokenStrings;
-    }
-
-    public static TokenType getTokenTypeForTokenString(String tokenString) {
-        for(Map.Entry<TokenType, String> entry : tokenStrings.entrySet()) {
-            if(entry.getValue().equals(tokenString)) {
-                return entry.getKey();
-            }
-        }
-
-        return null;
     }
 }

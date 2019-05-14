@@ -1,6 +1,7 @@
 package ro.adlabs;
 
 import ro.adlabs.logging.Log;
+import ro.adlabs.tokens.Token;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -25,9 +26,15 @@ public class Compiler {
             Log.error("Code is not lexically correct");
         }
 
-        System.out.println(analyzer);
+        printTokens();
 
         return true;
+    }
+
+    private void printTokens() {
+        for(Token tk : analyzer.getTokens()) {
+            System.out.println(tk);
+        }
     }
 
     private String getSourceCode(File source) throws IOException {
