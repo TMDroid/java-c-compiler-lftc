@@ -35,7 +35,7 @@ public class Compiler {
     }
 
     private void printTokens() {
-        for(Token tk : analyzer.getTokens()) {
+        for(Token tk : lexicalAnalyzer.getTokens()) {
             System.out.println(tk);
         }
     }
