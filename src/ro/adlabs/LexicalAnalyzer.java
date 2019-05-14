@@ -141,7 +141,7 @@ public class LexicalAnalyzer implements Analyzer {
                     break;
 
                 case States.STATE_INT_4_FINAL:
-                    Integer intValue = Integer.valueOf(sourceCode.substring(identifierStartIndex, index));
+                    Number intValue = convertStringToIntegerConsideringBase(sourceCode.substring(identifierStartIndex, index));
                     identifierStartIndex = -1;
                     createToken(Token.TokenType.CT_INT, intValue, currentLine);
                     state = States.STATE_INITIAL;
@@ -223,12 +223,13 @@ public class LexicalAnalyzer implements Analyzer {
                         state = States.STATE_NUMERIC_11;
                     } else {
                         state = States.STATE_REAL_12_FINAL;
+                        break;
                     }
                     index++;
                     break;
 
                 case States.STATE_REAL_12_FINAL:
-                    Float floatValue = Float.valueOf(sourceCode.substring(identifierStartIndex, index));
+                    Number floatValue = convertStringToIntegerConsideringBase(sourceCode.substring(identifierStartIndex, index));
                     identifierStartIndex = -1;
                     createToken(Token.TokenType.CT_REAL, floatValue, currentLine);
                     state = States.STATE_INITIAL;
@@ -246,8 +247,11 @@ public class LexicalAnalyzer implements Analyzer {
                 case States.STATE_NUMERIC_14:
                     if (!Character.isDigit(currentCharacter)) {
                         state = States.STATE_REAL_12_FINAL;
+                        break;
                     }
+
                     index++;
+                    state = States.STATE_INITIAL;
                     break;
 
                 case States.STATE_STRING_15:
@@ -284,7 +288,7 @@ public class LexicalAnalyzer implements Analyzer {
                     break;
 
                 case States.STATE_STRING_19_FINAL:
-                    String theString = sourceCode.substring(identifierStartIndex, index - 1);
+                    String theString = replaceEscapedCharacters(sourceCode.substring(identifierStartIndex, index - 1));
                     identifierStartIndex = -1;
                     createToken(Token.TokenType.CT_STRING, theString, currentLine);
                     state = States.STATE_INITIAL;
@@ -333,7 +337,7 @@ public class LexicalAnalyzer implements Analyzer {
                     break;
 
                 case States.STATE_CHAR_23_FINAL:
-                    String theChar = sourceCode.substring(identifierStartIndex, index);
+                    String theChar = replaceEscapedCharacters(sourceCode.substring(identifierStartIndex, index - 1));
                     identifierStartIndex = -1;
                     createToken(Token.TokenType.CT_CHAR, theChar, currentLine);
                     state = States.STATE_INITIAL;
@@ -566,6 +570,35 @@ public class LexicalAnalyzer implements Analyzer {
         }
 
         return true;
+    }
+
+    // '\\' [abfnrtv'?"\\0] ;
+    private String replaceEscapedCharacters(String substring) {
+        return substring.replace("\\\\", "\\")
+                .replace("\\a", String.valueOf(((char) 0x07)))
+                .replace("\\b", String.valueOf(((char) 0x08)))
+                .replace("\\e", String.valueOf(((char) 0x1B)))
+                .replace("\\f", String.valueOf(((char) 0x0C)))
+                .replace("\\n", String.valueOf(((char) 0x0A)))
+                .replace("\\r", String.valueOf(((char) 0x0D)))
+                .replace("\\t", String.valueOf(((char) 0x09)))
+                .replace("\\v", String.valueOf(((char) 0x0B)))
+                .replace("\\\\", String.valueOf(((char) 0x5C)))
+                .replace("\\\"", String.valueOf(((char) 0x22)))
+                .replace("\\\'", String.valueOf(((char) 0x27)))
+                .replace("\\?", String.valueOf(((char) 0x3F)))
+                .replace("\\0", String.valueOf(((char) 0x00)));
+    }
+
+    private Number convertStringToIntegerConsideringBase(String number) {
+        if(number.startsWith("0x")) {
+            number = number.replace("0x", "");
+            return Long.parseLong(number, 16);
+        } else if(number.startsWith("0") && !number.contains(".")) { //octal
+            return Long.parseLong(number, 8);
+        }
+
+        return Double.parseDouble(number);
     }
 
     private String getKeywordToken(String id) {
