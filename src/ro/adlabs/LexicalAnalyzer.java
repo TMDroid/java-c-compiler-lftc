@@ -277,13 +277,14 @@ public class LexicalAnalyzer implements Analyzer {
                 case States.STATE_STRING_18:
                     if (currentCharacter == '"') {
                         state = States.STATE_STRING_19_FINAL;
+                        index++;
                     } else {
                         state = States.STATE_STRING_15;
                     }
                     break;
 
                 case States.STATE_STRING_19_FINAL:
-                    String theString = sourceCode.substring(identifierStartIndex, index);
+                    String theString = sourceCode.substring(identifierStartIndex, index - 1);
                     identifierStartIndex = -1;
                     createToken(Token.TokenType.CT_STRING, theString, currentLine);
                     state = States.STATE_INITIAL;

@@ -29,8 +29,8 @@ public class Compiler {
         syntacticAnalyzer = new SyntacticAnalyzer(lexicalAnalyzer.getTokens());
         boolean syntacticallyCorrect = syntacticAnalyzer.analyze();
 
+        System.out.println(lexicalAnalyzer);
         if(syntacticallyCorrect) {
-            System.out.println(lexicalAnalyzer);
         }
 
         return true;
