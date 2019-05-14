@@ -7,10 +7,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class LexicalAnalyzer {
+public class LexicalAnalyzer implements Analyzer {
 
-    List<Token> tokens;
-    Map<Character, Integer> initialStateTransitions = new HashMap<Character, Integer>() {{
+    private List<Token> tokens;
+    private Map<Character, Integer> initialStateTransitions = new HashMap<Character, Integer>() {{
         put(' ', States.STATE_INITIAL);
         put('\n', States.STATE_INITIAL);
         put('\r', States.STATE_INITIAL);
@@ -35,6 +35,7 @@ public class LexicalAnalyzer {
         put('"', States.STATE_STRING_15);
         put('\'', States.STATE_CHAR_20);
         put('/', States.STATE_COMMENT_BLOCK_55);
+        put('.', States.STATE_DOT_24);
     }};
     private String sourceCode;
     private Integer index = 0;
@@ -49,20 +50,30 @@ public class LexicalAnalyzer {
         return tokens.toString();
     }
 
+    public List<Token> getTokens() {
+        return tokens;
+    }
+
     public boolean analyze() {
         Integer state = States.STATE_INITIAL;
         Integer identifierStartIndex = -1;
         Integer currentLine = 1;
 
         while (true) {
-            Character currentCharacter = sourceCode.charAt(index);
-//            System.out.println(currentCharacter);
+            Character currentCharacter = null;
+            try {
+                currentCharacter = sourceCode.charAt(index);
+            } catch (IndexOutOfBoundsException e) {}
 
             switch (state) {
                 case States.STATE_INITIAL: // inceput de ID
                     // verific daca caracterul e in map-ul de tranzitii din starea de inceput 0
                     if (initialStateTransitions.containsKey(currentCharacter)) {
                         state = initialStateTransitions.get(currentCharacter);
+
+                        if (currentCharacter == '\n') {
+                            currentLine++;
+                        }
                     } else {
                         if (identifierStartIndex == -1) {
                             identifierStartIndex = index;
@@ -84,10 +95,7 @@ public class LexicalAnalyzer {
 
                             }
                         }
-                    }
 
-                    if (currentCharacter == '\n') {
-                        currentLine++;
                     }
 
                     index++;
@@ -330,8 +338,14 @@ public class LexicalAnalyzer {
                     state = States.STATE_INITIAL;
                     break;
 
+                case States.STATE_DOT_24:
+                    Character c = '.';
+                    createToken(Token.TokenType.DOT, c, currentLine);
+                    state = States.STATE_INITIAL;
+                    break;
+
                 case States.STATE_COMMA_25:
-                    Character c = ',';
+                    c = ',';
                     createToken(Token.TokenType.COMMA, c, currentLine);
                     state = States.STATE_INITIAL;
                     break;
@@ -542,7 +556,7 @@ public class LexicalAnalyzer {
                     break;
             }
 
-            if (index >= sourceCode.length()) {
+            if (index > sourceCode.length() || currentCharacter == null) {
                 createToken(Token.TokenType.END, null, currentLine);
                 state = States.STATE_INITIAL;
 
@@ -644,6 +658,7 @@ public class LexicalAnalyzer {
         public static final int STATE_CHAR_21 = 21;
         public static final int STATE_CHAR_22 = 22;
         public static final int STATE_CHAR_23_FINAL = 23;
+        public static final int STATE_DOT_24 = 24;
         public static final int STATE_COMMA_25 = 25;
         public static final int STATE_SEMICOLON_26 = 26;
         public static final int STATE_LPAR_27 = 27;

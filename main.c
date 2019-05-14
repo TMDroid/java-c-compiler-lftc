@@ -1,4 +1,15 @@
+struct somestructname {
+    int somevariable, somevariable;
+    char someothervariable;
+};
+
 int main() {
-    int x = 51;
-    "mergem \t acasa \n la mama."
+    int i;
+    i = 3;
+
+    return i;
+}
+
+int doSomething() {
+    return 5;
 }

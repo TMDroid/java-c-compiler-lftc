@@ -10,22 +10,28 @@ public class Compiler {
 
     private String sourceCode;
 
-    private LexicalAnalyzer analyzer;
+    private LexicalAnalyzer lexicalAnalyzer;
+    private SyntacticAnalyzer syntacticAnalyzer;
 
     public Compiler(String sourcePath) throws IOException {
         File sourceFile = new File(sourcePath);
         sourceCode = getSourceCode(sourceFile);
 
-        analyzer = new LexicalAnalyzer(sourceCode);
+        lexicalAnalyzer = new LexicalAnalyzer(sourceCode);
     }
 
     public boolean compile() {
-        boolean codeIsValid = analyzer.analyze();
+        boolean codeIsValid = lexicalAnalyzer.analyze();
         if(!codeIsValid) {
             Log.error("Code is not lexically correct");
         }
 
-        System.out.println(analyzer);
+        syntacticAnalyzer = new SyntacticAnalyzer(lexicalAnalyzer.getTokens());
+        boolean syntacticallyCorrect = syntacticAnalyzer.analyze();
+
+        if(syntacticallyCorrect) {
+            System.out.println(lexicalAnalyzer);
+        }
 
         return true;
     }
